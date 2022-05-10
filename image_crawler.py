@@ -1,48 +1,65 @@
-from selenium import webdriver 
-from selenium.webdriver.common.keys import Keys 
-import time 
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+import time
 import urllib.request
-from webdriver_manager.chrome import ChromeDriverManager as CM
-import requests
 import os
 
-keywords = input("검색할 키워드를 입력하세요: ") # 아이유, 에스파윈터, 최예나
-count = int(input("몇 개의 데이터가 필요하신가요?: ")) #몇 개 데이터가 필요하신가요?
-# Selenium config
-options = webdriver.ChromeOptions()
+def createDirectory(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+        print("Error: Failed to create the directory")
 
-mobile_emulation = {
-    "userAgent": 'Mozilla/5.0 (Linux; Android 4.0.3; HTC One X Build/IML74K) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/99.0.4844.51 Mobile Safari/535.19'
-}
-# options.add_experimental_option("mobileEmulation", mobile_emulation)
+def crawling_img(name):
+    driver = webdriver.Chrome('/Users/kis/Documents/GitHub/image_detection/chromedriver')
+    driver.get("https://www.google.co.kr/imghp?hl=ko&authuser=0&ogbl")
+    elem = driver.find_element_by_name('q') # 서치바 , SearchBar
+    elem.send_keys(name) # 최예나 
+    elem.send_keys(Keys.RETURN)
 
-driver = webdriver.Chrome(executable_path=CM().install(), options=options)
-driver.set_window_position(0, 0)
-driver.set_window_size(1200, 800)
-driver.get('https://www.google.co.kr/imghp?hl=ko')
+    SCROLL_PAUSE_TIME = 1
+    last_height = driver.execute_script("return document.body.scrollHeight") # 브라우저의 높이를 찾음
+    while True:
+        # Scroll down to bottom
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        # 페이지 로딩 기다리기
+        time.sleep(SCROLL_PAUSE_TIME)
+        
+        new_height = driver.execute_script("return document.body.scrollHeight")
+        if new_height == last_height: 
+            try:
+                driver.find_element_by_css_selector(".mye4qd").click()
+            except:
+                break   
+        last_height = new_height
+        
+    imgs = driver.find_elements_by_css_selector(".rg_i.Q4LuWd")
 
-headers = {'User-Agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_0_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36'}
-# cateCd = 카테고리 번호 005 = 시럽
+    dir = '/Users/kis/Documents/GitHub/image_detection/' + name
+    
+    createDirectory(dir)
 
+    count = 1
+    for img in imgs:
+        try:
+            img.click()
+            time.sleep(2)
+            imgUrl = driver.find_element_by_xpath(
+                '//*[@id="Sva75c"]/div/div/div[3]/div[2]/c-wiz/div/div[1]/div[1]/div[3]/div/a/img').get_attribute("src")
+            # print(imgUrl)
+            path = dir + '/'
+            #imgurl to real image
+            # /Users/Danny/Desktop/GitHub/coding-academy-jioh/image-detection/최예나/최예나26.jpg
+            urllib.request.urlretrieve(imgUrl, path+name+str(count) + ".jpg") # 최예나25.jpg, 
+            count += 1
 
-elem = driver.find_element_by_name("q")
-elem.send_keys(keywords)
-elem.send_keys(Keys.RETURN)
-images = driver.find_element_by_css_selector(".rg_i.Q4LuWd")
+            if count >= 200:
+                break
+        except:
+            pass
+    driver.close()
 
-
-x = 0
-# for image in images:
-images.click()
-time.sleep(2)
-imgUrl = driver.find_element_by_xpath('/html/body/div[3]/c-wiz/div[3]/div[1]/div/div/div/div[1]/div[1]/span/div[1]/div[1]/div[27]/a[1]/div[1]/img').get_attribute("src")
-print(imgUrl)
-img_data = requests.get(imgUrl).content
-
-with open(keywords+'.jpg', 'wb') as handler:
-    handler.write(img_data)
-
-# urllib.request.urlretrieve(imgUrl, "image-class-1/" + keywords + str(x) +".jpg") # image-class-1/최예나24.jpg
-x += 1
-
-driver.close()
+classes = ['에스파윈터', '아이유', '박나래']
+for each in classes:
+    crawling_img(each)
