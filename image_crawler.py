@@ -54,12 +54,12 @@ def crawling_img(name):
             urllib.request.urlretrieve(imgUrl, path+name+str(count) + ".jpg") # 최예나25.jpg, 
             count += 1
 
-            if count >= 200:
+            if count >= 70:
                 break
         except:
             pass
     driver.close()
 
-classes = ['에스파윈터', '아이유', '박나래']
+classes = ['유리병', '페트병']
 for each in classes:
     crawling_img(each)
